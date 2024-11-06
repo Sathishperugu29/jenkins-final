@@ -1,0 +1,45 @@
+pipeline {
+  agent none
+  stages {
+    stage('Backend - Java') {
+      agent {
+        docker { image 'maven:3.8.1-adoptopenjdk-11' }
+      }
+      steps {
+        echo 'Building Java backend...'
+        sh 'mvn clean install'
+        sh 'mvn package -DskipTests'
+      }
+    }
+
+    stage('Frontend - Node.js') {
+      agent {
+        docker { image 'node:16-alpine' }
+      }
+      steps {
+        echo 'Building Node.js frontend...'
+        sh 'npm install'
+        sh 'npm run build'
+      }
+    }
+
+    stage('Database - MySQL') {
+      agent {
+        docker { image 'mysql:8.0' }
+      }
+      environment {
+        MYSQL_ROOT_PASSWORD = 'root_password'
+        MYSQL_DATABASE = 'sample_db'
+      }
+      steps {
+        echo 'Setting up MySQL database...'
+        // Initialize the database (replace with actual SQL commands if needed)
+        sh '''
+          echo "CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};" | mysql -u root -p${MYSQL_ROOT_PASSWORD}
+          echo "USE ${MYSQL_DATABASE}; CREATE TABLE sample_table (id INT PRIMARY KEY, name VARCHAR(50));" | mysql -u root -p${MYSQL_ROOT_PASSWORD}
+        '''
+      }
+    }
+  }
+}
+
